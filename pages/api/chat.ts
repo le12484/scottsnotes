@@ -115,7 +115,7 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
 
       // stream response (SSE) from OpenAI may be fragmented into multiple chunks
       // this ensures we properly read chunks and invoke an event for each SSE event stream
-      const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
+      const parser = createParser(async (event: ParsedEvent | ReconnectInterval) => {
         // ignore reconnect interval
         if (event.type !== 'event') return;
 
@@ -148,7 +148,7 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
             .map((a) => actionRe.exec(a))
             .filter((match) => match !== null);
           const queryText = actions[0]?.[1];
-          const observation = queryText ? queryScottsNotes(queryText) : '';
+          const observation = queryText ? await queryScottsNotes(queryText) : '';
           const nextPrompt = observation ? `Observation: ${observation}` : '';
           const enqueueText = nextPrompt ? text + '\n\n' + nextPrompt : text;
           const queue = encoder.encode(enqueueText);
