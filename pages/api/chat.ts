@@ -149,8 +149,9 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
             .filter((match) => match !== null);
           const queryText = actions[0]?.[1];
           const observation = queryText ? queryScottsNotes(queryText) : '';
-          const nextPrompt = `Observation: ${observation}`;
-          const queue = encoder.encode(text + '\n\n' + nextPrompt);
+          const nextPrompt = observation ? `Observation: ${observation}` : '';
+          const enqueueText = nextPrompt ? text + '\n\n' + nextPrompt : text;
+          const queue = encoder.encode(enqueueText);
           controller.enqueue(queue);
         } catch (e) {
           // maybe parse error
