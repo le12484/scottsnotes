@@ -49,7 +49,7 @@ async function queryScottsNotes(text: string): Promise<string> {
   const url = 'https://scotts-notes.fly.dev/query'; // Replace this with the URL of the API you want to access
   const headers = {
     'Content-Type': 'application/json',
-    // Add any other headers here if needed
+    Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
   };
 
   try {
