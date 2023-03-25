@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser';
 import { Transform } from 'stream';
-import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
+
 if (!process.env.OPENAI_API_KEY)
   console.warn(
     'OPENAI_API_KEY has not been provided in this deployment environment. ' + 'Will use the optional keys incoming from the client, which is not recommended.',
@@ -92,6 +92,8 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
     body: JSON.stringify(streamingPayload),
   });
 
+  let streamedResponse = '';
+  const actionRe = new RegExp('^Query: (.*)$');
   return new ReadableStream({
     async start(controller) {
       // handle errors here, to return them as custom text on the stream
@@ -140,7 +142,15 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
 
           // transmit the text stream
           const text = json.choices[0].delta?.content || '';
-          const queue = encoder.encode(text);
+          streamedResponse += text;
+          const actions = streamedResponse
+            .split('\n')
+            .map((a) => actionRe.exec(a))
+            .filter((match) => match !== null);
+          const queryText = actions[0]?.[1];
+          const observation = queryText ? queryScottsNotes(queryText) : '';
+          const nextPrompt = `Observation: ${observation}`;
+          const queue = encoder.encode(text + '\n\n' + nextPrompt);
           controller.enqueue(queue);
         } catch (e) {
           // maybe parse error
@@ -200,8 +210,6 @@ export default async function handler(req: NextRequest) {
     max_tokens,
   });
 
-  const myTransformStream = new MyTransformStream();
-  myTransformStream.pipe(stream);
   return new Response(stream);
 }
 
