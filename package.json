@@ -13,6 +13,7 @@
     "@emotion/react": "^11.10.6",
     "@emotion/server": "^11.10.0",
     "@emotion/styled": "^11.10.6",
+    "@mattiasbuelens/web-streams-adapter": "^0.1.0",
     "@mui/icons-material": "^5.11.11",
     "@mui/joy": "^5.0.0-alpha.72",
     "@mui/material": "^5.11.14",
