@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser';
 import { Transform } from 'stream';
+import { QueryResult } from '../../types/documents';
 
 if (!process.env.OPENAI_API_KEY)
   console.warn(
@@ -38,7 +39,7 @@ interface ChatCompletionsResponseChunked {
   }[];
 }
 
-async function queryScottsNotes(text: string): Promise<string> {
+async function queryScottsNotes(text: string): Promise<QueryResult | null> {
   const data = {
     queries: [
       {
@@ -61,15 +62,15 @@ async function queryScottsNotes(text: string): Promise<string> {
 
     if (response.ok) {
       const result = await response.json();
-      const texts = result.results[0].results.map((obj: any) => obj.text);
-      return texts.join('\n');
+      // const texts = result.results[0].results.map((obj: any) => obj.text);
+      return result;
     } else {
       console.error(`Request failed with status code: ${response.status}`);
-      return '';
+      return null;
     }
   } catch (error) {
     console.error('Fetch error:', error);
-    return '';
+    return null;
   }
 }
 
@@ -147,12 +148,24 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
             .split('\n')
             .map((a) => actionRe.exec(a))
             .filter((match) => match !== null);
+
           const queryText = actions[0]?.[1];
-          const observation = queryText ? await queryScottsNotes(queryText) : '';
-          const nextPrompt = observation ? `Observation: ${observation}` : '';
-          const enqueueText = nextPrompt ? text + '\n\n' + nextPrompt : text;
-          const queue = encoder.encode(enqueueText);
-          controller.enqueue(queue);
+
+          if (queryText) {
+            const queryResult = queryText ? await queryScottsNotes(queryText) : '';
+
+            const queryResultStr = queryResult ? JSON.stringify(queryResult) : '{}';
+
+            const encodedResult = encoder.encode(queryResultStr);
+
+            if (encodedResult) {
+              controller.enqueue(encodedResult);
+            }
+          }
+
+          const encodedText = encoder.encode(text);
+
+          controller.enqueue(encodedText);
         } catch (e) {
           // maybe parse error
           controller.error(e);
