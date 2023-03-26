@@ -143,6 +143,8 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
 
           // transmit the text stream
           const text = json.choices[0].delta?.content || '';
+          const encodedText = encoder.encode(text);
+
           streamedResponse += text;
           const actions = streamedResponse
             .split('\n')
@@ -159,12 +161,11 @@ async function OpenAIStream(apiKey: string, payload: Omit<ChatCompletionsRequest
             const encodedResult = encoder.encode(queryResultStr);
 
             if (encodedResult) {
+              controller.enqueue(encodedText);
               controller.enqueue(encodedResult);
+              controller.close();
             }
           }
-
-          const encodedText = encoder.encode(text);
-
           controller.enqueue(encodedText);
         } catch (e) {
           // maybe parse error
