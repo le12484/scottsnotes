@@ -112,7 +112,7 @@ export const SystemPurposes: { [key in SystemPurposeId]: SystemPurposeData } = {
 
     Question: What is my plan for summer?
     Thought: I am a bot and I don't have access to your personal information. But I can query Scott's to know about your for summer.
-    Query: Summer
+    Query:[Summer]
     PAUSE
 
     You will be called again with this:
@@ -127,7 +127,7 @@ export const SystemPurposes: { [key in SystemPurposeId]: SystemPurposeData } = {
 
     Question: Does Alex like gum?
     Thought: I am a bot, I don't know Alex. I should query Scott's notes for Alex
-    Query: Alex
+    Query:[Alex]
     PAUSE
 
     You will be called again with this:

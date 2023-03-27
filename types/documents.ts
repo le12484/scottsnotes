@@ -27,3 +27,6 @@ export interface QueryResult {
   query: string;
   results: Array<DocumentChunkWithScore>;
 }
+export interface QueryResults {
+  results: Array<QueryResult>;
+}
