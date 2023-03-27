@@ -120,9 +120,15 @@ export default function Conversation() {
         }
     }
 
-    async function handleSaveNote(newText: string) {
-        await saveNotes(newText);
-        return;
+    async function handleSaveNote(uid: string, newText: string) {
+        const response = await saveNotes(newText);
+        setMessages(list =>
+            list.map(message =>
+                message.uid === uid
+                    ? {...message, text: newText, memoryId: response.memoryId}
+                    : message,
+            ),
+        );
     }
 
     const handleListRunAgain = (uid: string) => {
@@ -175,7 +181,9 @@ export default function Conversation() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload),
         });
-        return;
+        const data = await response.json();
+        console.log(data);
+        return {memoryId: data.memoryId};
     };
 
     const deleteNote = async (memoryId: string) => {
@@ -456,7 +464,10 @@ export default function Conversation() {
                                                 handleListRunAgain(message.uid)
                                             }
                                             onSave={newText =>
-                                                handleSaveNote(newText)
+                                                handleSaveNote(
+                                                    message.uid,
+                                                    newText,
+                                                )
                                             }
                                         />
                                     );

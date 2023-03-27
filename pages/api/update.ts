@@ -81,6 +81,6 @@ export default async function handler(
 ) {
     // console.log(req.body);
     const {memoryId, text}: UpdateRequest = req.body;
-    await updateScottsNotes(memoryId, text);
-    return res.status(200).json({message: 'success'});
+    const response = await updateScottsNotes(memoryId, text);
+    return res.status(200).json({memoryId: response.ids[0]});
 }

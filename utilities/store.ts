@@ -54,14 +54,14 @@ type GptChatModelData = {
 };
 
 export const GptChatModels: {[key in GptChatModelId]: GptChatModelData} = {
+    'gpt-3.5-turbo': {
+        description: 'A good balance between speed and insight',
+        title: '3.5-Turbo',
+    },
     'gpt-4': {
         description:
             'Most insightful, larger problems, but slow, expensive, and may be unavailable',
         title: 'GPT-4',
-    },
-    'gpt-3.5-turbo': {
-        description: 'A good balance between speed and insight',
-        title: '3.5-Turbo',
     },
 };
 
