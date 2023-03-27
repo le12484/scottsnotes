@@ -252,7 +252,8 @@ export default function Conversation() {
                         // error parsing JSON, ignore
                         window.alert(
                             'Error parsing JSON for messageText: ' +
-                                messageText,
+                                messageText +
+                                e,
                         );
                     }
                 }
