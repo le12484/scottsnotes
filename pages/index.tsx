@@ -224,7 +224,7 @@ export default function Conversation() {
                 if (done) break;
 
                 const messageText = decoder.decode(value);
-                if (messageText.startsWith('{')) {
+                if (newBotMessage.model && messageText.startsWith('{')) {
                     try {
                         if (!messageText.startsWith('{')) {
                             return;
