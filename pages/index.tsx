@@ -225,6 +225,9 @@ export default function Conversation() {
 
                 const messageText = decoder.decode(value);
                 try {
+                    if (!messageText.startsWith('{')) {
+                        return;
+                    }
                     const parsed: QueryResults = JSON.parse(messageText);
 
                     const additionalMessages: UiMessage[] = [];
@@ -247,7 +250,6 @@ export default function Conversation() {
                 } catch (e) {
                     // error parsing JSON, ignore
                     window.alert('Error parsing JSON for messageText: ' + e);
-                    return;
                 }
 
                 newBotMessage.text += messageText;
