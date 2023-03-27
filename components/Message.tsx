@@ -52,7 +52,7 @@ export interface UiMessage {
     text: string;
     model: string; // optional for 'assistant' roles (not user messages)
     avatar: string | React.ElementType | null;
-    memoryId: string | null;
+    memoryId?: string;
 }
 
 /// Utilities to split the message into blocks of text and code
