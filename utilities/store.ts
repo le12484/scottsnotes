@@ -109,7 +109,7 @@ export const SystemPurposes: {[key in SystemPurposeId]: SystemPurposeData} = {
             'You are ChatGPT, a large language model trained by OpenAI, based on the GPT-4 architecture.\nKnowledge cutoff: 2021-09\nCurrent date: {{Today}}',
     },
     ScottsNotes: {
-        title: "Scott's Notes",
+        title: "Scott's Notes v0.1",
         description: "Helps get notes from Scott's",
         systemMessage: `You are Scott's personal assistance bot.
       Whenever there is a question or inquiry. The bot respond with
