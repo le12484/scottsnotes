@@ -218,19 +218,23 @@ export default function Conversation() {
                 const messageText = decoder.decode(value);
                 try {
                     const parsed: QueryResults = JSON.parse(messageText);
-                    console.log('parsed', parsed);
-                    const additionalBotMessage: UiMessage = createUiMessage(
-                        'assistant',
-                        '',
-                    );
-                    additionalBotMessage.text =
-                        parsed.results[0].results[0].text;
-                    additionalBotMessage.memoryId =
-                        parsed.results[0].results[0].metadata.document_id!;
+
+                    const additionalMessages: UiMessage[] = [];
+                    for (const result of parsed.results[0].results) {
+                        const botMessage: UiMessage = createUiMessage(
+                            'assistant',
+                            '',
+                        );
+                        botMessage.text = result.text;
+                        botMessage.memoryId = result.metadata.document_id!;
+
+                        additionalMessages.push(botMessage);
+                    }
+
                     setMessages(list => {
-                        return [...list, additionalBotMessage];
+                        return [...list, ...additionalMessages];
                     });
-                    console.log('additionalBotMessage', additionalBotMessage);
+                    // console.log('additionalBotMessage', additionalBotMessage);
                     return;
                 } catch (e) {
                     // error parsing JSON, ignore
@@ -430,24 +434,33 @@ export default function Conversation() {
                     ) : (
                         <>
                             <List sx={{p: 0}}>
-                                {messages.map(message => (
-                                    <Message
-                                        key={'msg-' + message.uid}
-                                        uiMessage={message}
-                                        onDelete={() =>
-                                            handleListDelete(message.uid)
-                                        }
-                                        onEdit={newText =>
-                                            handleListEdit(message.uid, newText)
-                                        }
-                                        onRunAgain={() =>
-                                            handleListRunAgain(message.uid)
-                                        }
-                                        onSave={newText =>
-                                            handleSaveNote(newText)
-                                        }
-                                    />
-                                ))}
+                                {messages.map(message => {
+                                    if (message.role === 'system') {
+                                        return null;
+                                    }
+
+                                    return (
+                                        <Message
+                                            key={'msg-' + message.uid}
+                                            uiMessage={message}
+                                            onDelete={() =>
+                                                handleListDelete(message.uid)
+                                            }
+                                            onEdit={newText =>
+                                                handleListEdit(
+                                                    message.uid,
+                                                    newText,
+                                                )
+                                            }
+                                            onRunAgain={() =>
+                                                handleListRunAgain(message.uid)
+                                            }
+                                            onSave={newText =>
+                                                handleSaveNote(newText)
+                                            }
+                                        />
+                                    );
+                                })}
                                 <div ref={messagesEndRef}></div>
                             </List>
                         </>
