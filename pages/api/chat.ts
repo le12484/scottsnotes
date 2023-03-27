@@ -154,7 +154,7 @@ async function OpenAIStream(
                                 encoder.encode(queryResultStr);
 
                             if (encodedQueryResult) {
-                                controller.enqueue(encodedQueryResult);
+                                await controller.enqueue(encodedQueryResult);
                             }
                             controller.close();
                             return;
