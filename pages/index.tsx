@@ -224,36 +224,38 @@ export default function Conversation() {
                 if (done) break;
 
                 const messageText = decoder.decode(value);
-                try {
-                    if (!messageText.startsWith('{')) {
+                if (messageText.startsWith('{')) {
+                    try {
+                        if (!messageText.startsWith('{')) {
+                            return;
+                        }
+                        const parsed: QueryResults = JSON.parse(messageText);
+
+                        const additionalMessages: UiMessage[] = [];
+                        for (const result of parsed.results[0].results) {
+                            const botMessage: UiMessage = createUiMessage(
+                                'assistant',
+                                '',
+                            );
+                            botMessage.text = result.text;
+                            botMessage.memoryId = result.metadata.document_id!;
+
+                            additionalMessages.push(botMessage);
+                        }
+
+                        setMessages(list => {
+                            return [...list, ...additionalMessages];
+                        });
+                        // console.log('additionalBotMessage', additionalBotMessage);
                         return;
-                    }
-                    const parsed: QueryResults = JSON.parse(messageText);
-
-                    const additionalMessages: UiMessage[] = [];
-                    for (const result of parsed.results[0].results) {
-                        const botMessage: UiMessage = createUiMessage(
-                            'assistant',
-                            '',
+                    } catch (e) {
+                        // error parsing JSON, ignore
+                        window.alert(
+                            'Error parsing JSON for messageText: ' +
+                                messageText,
                         );
-                        botMessage.text = result.text;
-                        botMessage.memoryId = result.metadata.document_id!;
-
-                        additionalMessages.push(botMessage);
                     }
-
-                    setMessages(list => {
-                        return [...list, ...additionalMessages];
-                    });
-                    // console.log('additionalBotMessage', additionalBotMessage);
-                    return;
-                } catch (e) {
-                    // error parsing JSON, ignore
-                    window.alert(
-                        'Error parsing JSON for messageText: ' + messageText,
-                    );
                 }
-
                 newBotMessage.text += messageText;
 
                 // there may be a JSON object at the beginning of the message, which contains the model name (streaming workaround)
