@@ -246,7 +246,8 @@ export default function Conversation() {
                     return;
                 } catch (e) {
                     // error parsing JSON, ignore
-                    console.log('Error parsing JSON for messageText: ' + e);
+                    window.alert('Error parsing JSON for messageText: ' + e);
+                    return;
                 }
 
                 newBotMessage.text += messageText;
