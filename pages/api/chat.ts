@@ -101,109 +101,110 @@ async function OpenAIStream(
 
     let streamedResponse = '';
     const actionRe = new RegExp('Query:\\s*\\[([^\\]]+)\\]');
-    return new ReadableStream({
-        async start(controller) {
-            // handle errors here, to return them as custom text on the stream
-            if (!res.ok) {
-                let errorPayload: object = {};
-                try {
-                    errorPayload = await res.json();
-                } catch (e) {
-                    // ignore
-                }
-                // return custom text
-                controller.enqueue(
-                    encoder.encode(
-                        `OpenAI API error: ${res.status} ${
-                            res.statusText
-                        } ${JSON.stringify(errorPayload)}`,
-                    ),
-                );
-                return;
-            }
-
-            // the first packet will have the model name
-            let sentFirstPacket = false;
-
-            // stream response (SSE) from OpenAI may be fragmented into multiple chunks
-            // this ensures we properly read chunks and invoke an event for each SSE event stream
-            const parser = createParser(
-                async (event: ParsedEvent | ReconnectInterval) => {
-                    // ignore reconnect interval
-                    if (event.type !== 'event') return;
-
-                    const actions = streamedResponse
-                        .split('\n')
-                        .map(a => actionRe.exec(a))
-                        .filter(match => match !== null);
-
-                    const queryText = actions[0]?.[1];
-
-                    if (queryText) {
-                        console.log('queryText', queryText);
-                        const queryResult = queryText
-                            ? await queryScottsNotes(queryText)
-                            : '';
-
-                        const queryResultStr = queryResult
-                            ? JSON.stringify(queryResult)
-                            : '{}';
-
-                        const encodedQueryResult =
-                            encoder.encode(queryResultStr);
-
-                        if (encodedQueryResult) {
-                            // controller.enqueue(encodedText);
-                            controller.enqueue(encodedQueryResult);
-                        }
-                        controller.close();
-                        return;
-                    }
-
-                    // https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
-                    if (event.data === '[DONE]') {
-                        controller.close();
-                        return;
-                    }
-
+    return new ReadableStream(
+        {
+            async start(controller) {
+                // handle errors here, to return them as custom text on the stream
+                if (!res.ok) {
+                    let errorPayload: object = {};
                     try {
-                        const json: ChatCompletionsResponseChunked = JSON.parse(
-                            event.data,
-                        );
+                        errorPayload = await res.json();
+                    } catch (e) {
+                        // ignore
+                    }
+                    // return custom text
+                    controller.enqueue(
+                        encoder.encode(
+                            `OpenAI API error: ${res.status} ${
+                                res.statusText
+                            } ${JSON.stringify(errorPayload)}`,
+                        ),
+                    );
+                    return;
+                }
 
-                        // ignore any 'role' delta update
-                        if (json.choices[0].delta?.role) return;
+                // the first packet will have the model name
+                let sentFirstPacket = false;
 
-                        // stringify and send the first packet as a JSON object
-                        if (!sentFirstPacket) {
-                            sentFirstPacket = true;
-                            const firstPacket: ChatApiOutputStart = {
-                                model: json.model,
-                            };
-                            controller.enqueue(
-                                encoder.encode(JSON.stringify(firstPacket)),
-                            );
+                // stream response (SSE) from OpenAI may be fragmented into multiple chunks
+                // this ensures we properly read chunks and invoke an event for each SSE event stream
+                const parser = createParser(
+                    async (event: ParsedEvent | ReconnectInterval) => {
+                        // ignore reconnect interval
+                        if (event.type !== 'event') return;
+
+                        const actions = streamedResponse
+                            .split('\n')
+                            .map(a => actionRe.exec(a))
+                            .filter(match => match !== null);
+
+                        const queryText = actions[0]?.[1];
+
+                        if (queryText) {
+                            console.log('queryText', queryText);
+                            const queryResult = queryText
+                                ? await queryScottsNotes(queryText)
+                                : '';
+
+                            const queryResultStr = queryResult
+                                ? JSON.stringify(queryResult)
+                                : '{}';
+
+                            const encodedQueryResult =
+                                encoder.encode(queryResultStr);
+
+                            if (encodedQueryResult) {
+                                controller.enqueue(encodedQueryResult);
+                            }
+                            controller.close();
+                            return;
                         }
 
-                        // transmit the text stream
-                        const text = json.choices[0].delta?.content || '';
-                        const encodedText = encoder.encode(text);
+                        // https://beta.openai.com/docs/api-reference/completions/create#completions/create-stream
+                        if (event.data === '[DONE]') {
+                            controller.close();
+                            return;
+                        }
 
-                        streamedResponse += text;
+                        try {
+                            const json: ChatCompletionsResponseChunked =
+                                JSON.parse(event.data);
 
-                        controller.enqueue(encodedText);
-                    } catch (e) {
-                        // maybe parse error
-                        controller.error(e);
-                    }
-                },
-            );
+                            // ignore any 'role' delta update
+                            if (json.choices[0].delta?.role) return;
 
-            // https://web.dev/streams/#asynchronous-iteration
-            for await (const chunk of res.body as any)
-                parser.feed(decoder.decode(chunk));
+                            // stringify and send the first packet as a JSON object
+                            if (!sentFirstPacket) {
+                                sentFirstPacket = true;
+                                const firstPacket: ChatApiOutputStart = {
+                                    model: json.model,
+                                };
+                                controller.enqueue(
+                                    encoder.encode(JSON.stringify(firstPacket)),
+                                );
+                            }
+
+                            // transmit the text stream
+                            const text = json.choices[0].delta?.content || '';
+                            const encodedText = encoder.encode(text);
+
+                            streamedResponse += text;
+
+                            controller.enqueue(encodedText);
+                        } catch (e) {
+                            // maybe parse error
+                            controller.error(e);
+                        }
+                    },
+                );
+
+                // https://web.dev/streams/#asynchronous-iteration
+                for await (const chunk of res.body as any)
+                    parser.feed(decoder.decode(chunk));
+            },
         },
-    });
+        {highWaterMark: 128 * 1024},
+    );
 }
 
 // Next.js API route
